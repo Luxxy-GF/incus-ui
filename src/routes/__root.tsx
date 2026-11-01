@@ -10,6 +10,8 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { EventsDevtoolsPanel } from "@/components/debug/events-devtools-panel";
+import { IncusSessionProvider } from "@/components/providers/session-provider";
+import { Toaster, ToastProvider } from "@/components/ui/toast";
 
 import "../styles.css";
 
@@ -28,7 +30,12 @@ function RootDocument() {
 	return (
 		<>
 			<HeadContent />
-			<Outlet />
+			<ToastProvider>
+				<IncusSessionProvider>
+					<Outlet />
+				</IncusSessionProvider>
+				<Toaster />
+			</ToastProvider>
 			{import.meta.env.DEV && (
 				<TanStackDevtools
 					config={{
