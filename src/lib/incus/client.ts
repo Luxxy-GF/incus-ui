@@ -33,6 +33,7 @@ export class IncusApiError extends Error {
 }
 
 export type IncusQuery = Record<string, string | undefined>;
+export type IncusMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 interface IncusEnvelope {
 	type: string;
@@ -81,14 +82,27 @@ export interface IncusResponse<T> {
 }
 
 export interface IncusFetchOptions {
-	method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+	method?: IncusMethod;
 	query?: IncusQuery;
 	/** Serialized as JSON. */
 	body?: unknown;
+	/** Extra request headers. */
+	headers?: Record<string, string>;
 	/** Sent as If-Match: the ETag of the writable baseline the change was built from. */
 	ifMatch?: string;
 	signal?: AbortSignal;
 	fetchImpl?: typeof fetch;
+}
+
+type AuthFailureListener = (error: IncusApiError, path: string) => void;
+const authFailureListeners = new Set<AuthFailureListener>();
+
+/** Called when a request is refused with 401/403 (session may have ended). */
+export function onAuthFailure(listener: AuthFailureListener): () => void {
+	authFailureListeners.add(listener);
+	return () => {
+		authFailureListeners.delete(listener);
+	};
 }
 
 /** Sends one Incus API request and decodes its envelope (sync or async). */
@@ -97,19 +111,26 @@ export async function incusFetch<T>(
 	opts: IncusFetchOptions = {},
 ): Promise<IncusResponse<T>> {
 	const { query, signal, fetchImpl = fetch, method = "GET" } = opts;
-	const headers: Record<string, string> = { Accept: "application/json" };
+	const headers: Record<string, string> = {
+		Accept: "application/json",
+		...opts.headers,
+	};
 	if (opts.body !== undefined) headers["Content-Type"] = "application/json";
 	if (opts.ifMatch !== undefined) headers["If-Match"] = opts.ifMatch;
-
-	let response: Response;
-	try {
-		response = await fetchImpl(buildIncusUrl(path, query), {
+	const send = () =>
+		fetchImpl(buildIncusUrl(path, query), {
 			method,
 			headers,
 			credentials: "same-origin",
 			signal,
 			body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
 		});
+
+	let response: Response;
+	try {
+		response = await send();
+		// `incus webui` answers 305 after refreshing an expired OIDC token.
+		if (response.status === 305) response = await send();
 	} catch (cause) {
 		throw transportError(cause);
 	}
@@ -124,7 +145,11 @@ export async function incusFetch<T>(
 	const body = parseJson(text);
 
 	if (!response.ok) {
-		throw httpError(response.status, body);
+		const error = httpError(response.status, body);
+		if (error.kind === "auth" || error.kind === "forbidden") {
+			for (const listener of [...authFailureListeners]) listener(error, path);
+		}
+		throw error;
 	}
 
 	if (!isEnvelope(body)) {
@@ -191,14 +216,10 @@ function operationRef(body: IncusEnvelope): IncusOperationRef | null {
 	return id ? { id, metadata: body.metadata } : null;
 }
 
-/** GETs an Incus API path and returns the envelope `metadata`. */
+/** Sends an Incus API request and returns the envelope `metadata`. */
 export async function incusRequest<T>(
 	path: string,
-	opts: {
-		query?: IncusQuery;
-		signal?: AbortSignal;
-		fetchImpl?: typeof fetch;
-	} = {},
+	opts: Omit<IncusFetchOptions, "ifMatch"> = {},
 ): Promise<T> {
 	const response = await incusFetch<T>(path, opts);
 	if (response.operation) {
