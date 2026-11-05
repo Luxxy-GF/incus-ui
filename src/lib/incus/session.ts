@@ -81,9 +81,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 /** Reads the session from `GET /1.0` metadata. */
 export function parseSession(metadata: unknown): IncusSession {
-	const authMethods = isRecord(metadata) && Array.isArray(metadata.auth_methods)
-		? metadata.auth_methods.filter((m): m is string => typeof m === "string")
-		: [];
+	const authMethods =
+		isRecord(metadata) && Array.isArray(metadata.auth_methods)
+			? metadata.auth_methods.filter((m): m is string => typeof m === "string")
+			: [];
 	const uiConfig = isRecord(metadata) ? readStringMap(metadata.config) : {};
 	if (!isRecord(metadata) || metadata.auth !== "trusted") {
 		return {

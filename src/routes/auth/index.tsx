@@ -4,13 +4,13 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { notify } from "@/components/notifications/notify";
 import {
 	AuthCard,
 	AuthNotice,
 	ChoiceItem,
 	ChoiceList,
 } from "@/components/auth/shared";
+import { notify } from "@/components/notifications/notify";
 import { useIncusSession } from "@/components/providers/session-provider";
 import {
 	chooseAuthMethods,
