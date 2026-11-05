@@ -4,6 +4,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { IncusApiError } from "../../src/lib/incus/client.ts";
+import { UNKNOWN_CAPABILITIES } from "../../src/lib/incus/capabilities.ts";
 import type { IncusSession, SessionState } from "../../src/lib/incus/session.ts";
 import { isWebuiOrigin, signInLabel, signOut } from "../../src/lib/incus/sign-out.ts";
 
@@ -15,6 +16,7 @@ const base: IncusSession = {
 	authUserName: null,
 	sessionKey: null,
 	deploymentId: null,
+	capabilities: UNKNOWN_CAPABILITIES,
 };
 
 function harness(next: SessionState, respond?: (path: string) => Response) {
