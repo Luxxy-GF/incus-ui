@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: © 2026 Hye Ararat contributors
 // SPDX-License-Identifier: Apache-2.0
 
+import {
+	IconCheck,
+	IconDownload,
+	IconFileCertificate,
+} from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 
 export interface DownloadableFile {
@@ -51,6 +56,7 @@ export function CertificateDownloads({
 					const done = downloaded.has(file.name);
 					return (
 						<li key={file.name} className="flex items-center gap-3 p-3">
+							<IconFileCertificate className="size-5 shrink-0 text-muted-foreground" />
 							<div className="flex min-w-0 flex-1 flex-col">
 								<span className="truncate font-mono text-[13px]">
 									{file.name}
@@ -67,16 +73,18 @@ export function CertificateDownloads({
 								aria-label={`Download ${file.name}`}
 							>
 								{done ? (
-									<span className="text-emerald-500">Saved</span>
+									<IconCheck className="text-emerald-500" />
 								) : (
-									"Download"
+									<IconDownload />
 								)}
+								{done ? "Saved" : "Download"}
 							</Button>
 						</li>
 					);
 				})}
 			</ul>
 			<Button type="button" onClick={() => save(files)} className="self-start">
+				<IconDownload />
 				Download all
 			</Button>
 		</div>

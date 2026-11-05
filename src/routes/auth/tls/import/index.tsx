@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: © 2026 Hye Ararat contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import { IconLoader2 } from "@tabler/icons-react";
+import { IconLoader2, IconPlugConnected } from "@tabler/icons-react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
@@ -120,7 +120,11 @@ function BrowserImport() {
 				onClick={() => void check()}
 				disabled={checking}
 			>
-				{checking && <IconLoader2 className="motion-safe:animate-spin" />}
+				{checking ? (
+					<IconLoader2 className="motion-safe:animate-spin" />
+				) : (
+					<IconPlugConnected />
+				)}
 				Test connection
 			</Button>
 		</AuthCard>

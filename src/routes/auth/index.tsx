@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: © 2026 Hye Ararat contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import { IconLoader2 } from "@tabler/icons-react";
+import {
+	IconCertificate,
+	IconLoader2,
+	IconShieldLock,
+	IconTerminal2,
+} from "@tabler/icons-react";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -39,23 +44,27 @@ function startOidc() {
 const optionDetails: Record<
 	SignInOption,
 	{
+		icon: typeof IconCertificate;
 		title: string;
 		description: string;
 		to?: string;
 	}
 > = {
 	tls: {
+		icon: IconCertificate,
 		title: "TLS client certificate",
 		description:
 			"Sign in with a certificate trusted by this server. You can create one here, use one you already have, or paste a client token.",
 		to: "/auth/tls",
 	},
 	oidc: {
+		icon: IconShieldLock,
 		title: "Single sign-on (OpenID Connect)",
 		description:
 			"Continue to your organization's identity provider and come back signed in.",
 	},
 	cli: {
+		icon: IconTerminal2,
 		title: "Sign in with Incus CLI",
 		description:
 			"Already use the incus command on this computer? Open the UI from it, no certificate setup needed.",
@@ -137,6 +146,7 @@ function SignInPicker() {
 						return (
 							<ChoiceItem
 								key={option}
+								icon={details.icon}
 								title={details.title}
 								description={details.description}
 								to={details.to}
