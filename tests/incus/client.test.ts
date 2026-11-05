@@ -6,6 +6,7 @@ import { describe, it } from "node:test";
 import {
 	buildIncusUrl,
 	IncusApiError,
+	incusFetch,
 	incusRequest,
 	onAuthFailure,
 } from "../../src/lib/incus/client.ts";
@@ -213,17 +214,25 @@ describe("incusRequest", () => {
 		assert.equal(headers["Content-Type"], "application/json");
 	});
 
-	it("retries once on 305 (incus webui OIDC refresh) and accepts async envelopes", async () => {
+	it("retries once on 305 (incus webui OIDC refresh)", async () => {
 		let calls = 0;
 		const fetchImpl = (async () => {
 			calls += 1;
 			return calls === 1
 				? new Response("", { status: 305 })
-				: new Response(JSON.stringify({ type: "async", status_code: 202, metadata: { id: "op" } }), { status: 202 });
+				: new Response(JSON.stringify({ type: "sync", status_code: 200, metadata: { id: "x" } }), { status: 200 });
 		}) as unknown as typeof fetch;
 		const metadata = await incusRequest<{ id: string }>("/1.0/instances", { method: "POST", fetchImpl });
 		assert.equal(calls, 2);
-		assert.equal(metadata.id, "op");
+		assert.equal(metadata.id, "x");
+	});
+
+	it("reports an async envelope as an operation, and incusRequest refuses it", async () => {
+		const asyncReply = (async () =>
+			new Response(JSON.stringify({ type: "async", status_code: 202, metadata: { id: "op" } }), { status: 202 })) as unknown as typeof fetch;
+		const response = await incusFetch<{ id: string }>("/1.0/instances", { method: "POST", fetchImpl: asyncReply });
+		assert.equal(response.operation?.id, "op");
+		await assert.rejects(incusRequest("/1.0/instances", { method: "POST", fetchImpl: asyncReply }), IncusApiError);
 	});
 
 	it("notifies auth-failure listeners on 401/403 only", async () => {
