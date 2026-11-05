@@ -113,9 +113,11 @@ export function UserMenu() {
 					size="lg"
 					tooltip={`${fullName} · ${method}`}
 					render={<Menu.Trigger />}
-					className="cursor-pointer"
+					className="cursor-pointer p-0"
 				>
-					<IconUserCircle className="size-5!" />
+					<span className="flex size-10 shrink-0 items-center justify-center group-data-[collapsible=icon]:size-8">
+						<IconUserCircle className="size-5" />
+					</span>
 					<span className="flex min-w-0 flex-1 flex-col text-left leading-tight group-data-[collapsible=icon]:hidden">
 						<span className="truncate text-sm font-medium">{name}</span>
 						<span className="truncate text-xs text-muted-foreground">
