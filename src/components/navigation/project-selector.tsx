@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: © 2026 Joseph Maldjian <joseph.maldjian@hyecompany.com>
 // SPDX-License-Identifier: Apache-2.0
 
+import { IconAlertCircle, IconRefresh } from "@tabler/icons-react";
 import {
 	setPreset,
 	setSampleScope,
@@ -130,13 +131,30 @@ function Selector({
 			<Select
 				value={selectedKey}
 				onValueChange={(key) => {
+					if (key === ERROR_KEY) {
+						retry();
+						return;
+					}
 					const next = key === null ? null : scopeFromKey(key);
 					if (next !== null) {
 						setScope(next);
 					}
 				}}
 			>
-				<SelectTrigger aria-label="Project" className="max-w-36 sm:max-w-56">
+				<SelectTrigger
+					aria-label={error ? "Project: could not load projects" : "Project"}
+					className={cn(
+						"max-w-36 sm:max-w-56",
+						error &&
+							"border-destructive bg-destructive/10 hover:bg-destructive/20 dark:bg-destructive/10 dark:hover:bg-destructive/20",
+					)}
+				>
+					{error && (
+						<IconAlertCircle
+							aria-hidden="true"
+							className="size-4 text-destructive"
+						/>
+					)}
 					<SelectValue>{scopeLabel(scope, isAvailable)}</SelectValue>
 				</SelectTrigger>
 				<SelectContent>
@@ -150,8 +168,16 @@ function Selector({
 						</>
 					)}
 					{error !== null && (
-						<SelectItem value={ERROR_KEY} disabled>
-							Could not load projects
+						<SelectItem
+							value={ERROR_KEY}
+							className="bg-destructive/10 text-destructive focus:bg-destructive/20 focus:text-destructive"
+						>
+							<IconAlertCircle
+								aria-hidden="true"
+								className="mr-2 inline size-4"
+							/>
+							Could not load projects. Retry
+							<IconRefresh aria-hidden="true" className="ml-2 inline size-4" />
 						</SelectItem>
 					)}
 					{view.kind === "empty" && (
@@ -174,15 +200,6 @@ function Selector({
 					)}
 				</SelectContent>
 			</Select>
-			{error !== null && (
-				<button
-					type="button"
-					className="shrink-0 rounded-md px-1.5 py-1 text-xs text-muted-foreground underline-offset-4 hover:underline"
-					onClick={retry}
-				>
-					Retry
-				</button>
-			)}
 		</div>
 	);
 }
