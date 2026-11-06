@@ -2,13 +2,15 @@
 // SPDX-FileCopyrightText: © 2026 Joseph Maldjian <joseph.maldjian@hyecompany.com>
 // SPDX-License-Identifier: Apache-2.0
 
-import { IconAlertCircle, IconRefresh } from "@tabler/icons-react";
+import { IconAlertCircle, IconRefresh, IconWorld } from "@tabler/icons-react";
 import {
 	setPreset,
 	setSampleScope,
 	useProjectSelectorSimulation,
 } from "@/components/debug/project-selector-state";
 import { LoadingStatus, SkeletonList } from "@/components/loading/skeletons";
+import { Button } from "@/components/ui/button";
+import { OverflowText } from "@/components/ui/overflow-text";
 import {
 	Select,
 	SelectContent,
@@ -16,6 +18,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useProjectScope } from "@/hooks/incus/use-project-scope";
 import { useProjects, useProjectsApi } from "@/hooks/incus/use-projects";
 import { IncusApiError } from "@/lib/incus/client";
@@ -28,16 +36,6 @@ import {
 	scopeFromKey,
 } from "@/lib/incus/project-scope";
 import { cn } from "@/lib/ui/utils";
-
-const ERROR_KEY = "status:error";
-const EMPTY_KEY = "status:empty";
-
-function scopeLabel(scope: ProjectScope, isAvailable: boolean): string {
-	if (scope.kind === "all") {
-		return "All Projects";
-	}
-	return isAvailable ? scope.name : `${scope.name} (unavailable)`;
-}
 
 export function ProjectSelector({ className }: { className?: string }) {
 	const { scope, setScope, isAvailable } = useProjectScope();
@@ -125,80 +123,129 @@ function Selector({
 	const view = collectionView(projects);
 
 	const selectedKey = projectScopeKey(scope);
+	const unavailable = scope.kind === "project" && !isAvailable;
+	const selectedLabel = scope.kind === "all" ? "All Projects" : scope.name;
 
 	return (
 		<div className={cn("flex min-w-0 items-center gap-1", className)}>
 			<Select
 				value={selectedKey}
 				onValueChange={(key) => {
-					if (key === ERROR_KEY) {
-						retry();
-						return;
-					}
 					const next = key === null ? null : scopeFromKey(key);
 					if (next !== null) {
 						setScope(next);
 					}
 				}}
 			>
-				<SelectTrigger
-					aria-label={error ? "Project: could not load projects" : "Project"}
-					className={cn(
-						"max-w-36 sm:max-w-56",
-						error &&
-							"border-destructive bg-destructive/10 hover:bg-destructive/20 dark:bg-destructive/10 dark:hover:bg-destructive/20",
-					)}
-				>
-					{error && (
-						<IconAlertCircle
-							aria-hidden="true"
-							className="size-4 text-destructive"
+				<TooltipProvider>
+					<Tooltip disabled={!unavailable}>
+						<TooltipTrigger
+							render={
+								<SelectTrigger
+									aria-label={`Project: ${selectedLabel}${unavailable ? ", unavailable" : ""}${error ? ", could not load projects" : ""}`}
+									className={cn(
+										"group/overflow max-w-36 sm:max-w-56",
+										(error || unavailable) && "text-destructive",
+										unavailable &&
+											"border-destructive bg-destructive/10 hover:bg-destructive/20 dark:bg-destructive/10 dark:hover:bg-destructive/20",
+									)}
+								>
+									{(error || unavailable) && (
+										<IconAlertCircle
+											aria-hidden="true"
+											className="size-4 text-destructive"
+										/>
+									)}
+									{scope.kind === "all" && !error && (
+										<IconWorld aria-hidden="true" className="size-4" />
+									)}
+									<SelectValue className="min-w-0">
+										<OverflowText text={selectedLabel} />
+									</SelectValue>
+								</SelectTrigger>
+							}
 						/>
-					)}
-					<SelectValue>{scopeLabel(scope, isAvailable)}</SelectValue>
-				</SelectTrigger>
-				<SelectContent>
-					<SelectItem value={projectScopeKey(ALL_PROJECTS)}>
-						All Projects
-					</SelectItem>
-					{view.kind === "skeleton" && (
-						<>
-							<LoadingStatus label="Loading projects" />
-							<SkeletonList items={3} />
-						</>
-					)}
-					{error !== null && (
-						<SelectItem
-							value={ERROR_KEY}
-							className="bg-destructive/10 text-destructive focus:bg-destructive/20 focus:text-destructive"
-						>
-							<IconAlertCircle
-								aria-hidden="true"
-								className="mr-2 inline size-4"
-							/>
-							Could not load projects. Retry
-							<IconRefresh aria-hidden="true" className="ml-2 inline size-4" />
+						<TooltipContent>Unavailable</TooltipContent>
+					</Tooltip>
+					<SelectContent
+						align="end"
+						alignItemWithTrigger={false}
+						className="w-auto max-w-[min(18rem,calc(100vw-2rem))] p-1"
+						listHeader={
+							error !== null && (
+								<div className="mb-1 flex items-center gap-2 border-b px-2 py-2 text-sm text-destructive">
+									<IconAlertCircle
+										aria-hidden="true"
+										className="size-4 shrink-0"
+									/>
+									<span>Could not load projects</span>
+									<Button
+										size="xs"
+										variant="outline"
+										onClick={retry}
+										onKeyDown={(event) => event.stopPropagation()}
+									>
+										<IconRefresh aria-hidden="true" /> Retry
+									</Button>
+								</div>
+							)
+						}
+					>
+						<SelectItem className="pl-2" value={projectScopeKey(ALL_PROJECTS)}>
+							<span className="flex min-w-0 items-center gap-2">
+								<IconWorld aria-hidden="true" className="size-4 shrink-0" />
+								<span className="truncate">All Projects</span>
+							</span>
 						</SelectItem>
-					)}
-					{view.kind === "empty" && (
-						<SelectItem value={EMPTY_KEY} disabled>
-							No projects
-						</SelectItem>
-					)}
-					{names.map((project) => (
-						<SelectItem
-							key={project.name}
-							value={projectScopeKey({ kind: "project", name: project.name })}
-						>
-							{project.name}
-						</SelectItem>
-					))}
-					{!isAvailable && scope.kind === "project" && (
-						<SelectItem value={selectedKey} disabled>
-							{scopeLabel(scope, false)}
-						</SelectItem>
-					)}
-				</SelectContent>
+						{view.kind === "skeleton" && (
+							<>
+								<LoadingStatus label="Loading projects" />
+								<SkeletonList items={3} />
+							</>
+						)}
+						{names.map((project) => (
+							<SelectItem
+								key={project.name}
+								label={project.name}
+								className="group/overflow"
+								itemTextClassName="text-clip"
+								indicatorPosition="start"
+								value={projectScopeKey({
+									kind: "project",
+									name: project.name,
+								})}
+							>
+								<OverflowText text={project.name} />
+							</SelectItem>
+						))}
+						{unavailable && (
+							<Tooltip>
+								<TooltipTrigger
+									render={<div className="group/overflow" />}
+									tabIndex={-1}
+								>
+									<SelectItem
+										value={selectedKey}
+										disabled
+										aria-label={`${selectedLabel}, unavailable`}
+										data-variant="destructive"
+										itemTextClassName="text-clip"
+										className="pl-2 text-destructive focus:text-destructive data-disabled:opacity-100"
+									>
+										<span className="flex min-w-0 items-center gap-2">
+											<IconAlertCircle
+												aria-hidden="true"
+												className="size-4 shrink-0"
+											/>
+											<OverflowText text={selectedLabel} />
+										</span>
+									</SelectItem>
+								</TooltipTrigger>
+								<TooltipContent>Unavailable</TooltipContent>
+							</Tooltip>
+						)}
+					</SelectContent>
+				</TooltipProvider>
 			</Select>
 		</div>
 	);
