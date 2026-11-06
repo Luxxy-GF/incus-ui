@@ -9,8 +9,8 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { CollectionDevtoolsPanel } from "@/components/debug/collection-devtools-panel";
 import { EventsDevtoolsPanel } from "@/components/debug/events-devtools-panel";
-import { ProjectSelectorDevtoolsPanel } from "@/components/debug/project-selector-devtools-panel";
 
 import "../styles.css";
 
@@ -45,8 +45,8 @@ function RootDocument() {
 							render: <EventsDevtoolsPanel />,
 						},
 						{
-							name: "Project Selector",
-							render: <ProjectSelectorDevtoolsPanel />,
+							name: "Collections",
+							render: <CollectionDevtoolsPanel />,
 						},
 					]}
 				/>

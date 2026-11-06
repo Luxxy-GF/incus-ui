@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { useMemo, useSyncExternalStore } from "react";
+import { createCollectionWatch } from "#collection-debug";
 import {
 	useDataLayer,
 	useSessionState,
 } from "@/components/providers/data-provider";
+import { useCollectionWatch } from "@/hooks/incus/use-collection-watch";
 import type {
 	CollectionResult,
 	ProjectsApi,
@@ -21,6 +23,9 @@ type Selected<F extends readonly ProjectField[]> = Pick<
 >;
 
 const noop = () => () => undefined;
+const useProjectsWatch = import.meta.env.DEV
+	? createCollectionWatch("projects")
+	: useCollectionWatch;
 
 /** Result shape while no data layer exists (session loading, failed or untrusted). */
 function placeholder(session: SessionState) {
@@ -61,7 +66,7 @@ export function useProjects<const F extends readonly ProjectField[]>(
 		() => ({ ...placeholder(session), missing: [], complete: false }),
 		[session],
 	);
-	return useWatch(watch, fallback) as CollectionResult<Selected<F>>;
+	return useProjectsWatch(watch, fallback);
 }
 
 /** One project with only the selected fields. */

@@ -18,17 +18,17 @@ export const IncusEventsContext = createContext<IncusEventsManager | null>(
 
 // The active manager, for consumers outside the provider tree (devtools).
 let activeManager: IncusEventsManager | null = null;
-const activeListeners = new Set<() => void>();
+const activeListeners = import.meta.env.DEV ? new Set<() => void>() : null;
 
 function setActiveManager(manager: IncusEventsManager | null) {
 	activeManager = manager;
-	for (const listener of activeListeners) listener();
+	for (const listener of activeListeners ?? []) listener();
 }
 
 function subscribeActiveManager(listener: () => void) {
-	activeListeners.add(listener);
+	activeListeners?.add(listener);
 	return () => {
-		activeListeners.delete(listener);
+		activeListeners?.delete(listener);
 	};
 }
 
@@ -56,11 +56,11 @@ export function IncusEventsProvider({
 			origin: window.location.origin,
 		});
 		setManager(next);
-		setActiveManager(next);
+		if (import.meta.env.DEV) setActiveManager(next);
 		return () => {
 			next.dispose();
 			setManager(null);
-			if (activeManager === next) setActiveManager(null);
+			if (import.meta.env.DEV && activeManager === next) setActiveManager(null);
 		};
 	}, [sessionKey]);
 

@@ -3,11 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { IconAlertCircle, IconRefresh, IconWorld } from "@tabler/icons-react";
-import {
-	setPreset,
-	setSampleScope,
-	useProjectSelectorSimulation,
-} from "@/components/debug/project-selector-state";
 import { LoadingStatus, SkeletonList } from "@/components/loading/skeletons";
 import { Button } from "@/components/ui/button";
 import { OverflowText } from "@/components/ui/overflow-text";
@@ -26,7 +21,6 @@ import {
 } from "@/components/ui/tooltip";
 import { useProjectScope } from "@/hooks/incus/use-project-scope";
 import { useProjects, useProjectsApi } from "@/hooks/incus/use-projects";
-import { IncusApiError } from "@/lib/incus/client";
 import type { CollectionResult } from "@/lib/incus/data/consumers";
 import { collectionView } from "@/lib/incus/data/loading";
 import {
@@ -50,11 +44,7 @@ export function ProjectSelector({ className }: { className?: string }) {
 		projects,
 		retry: () => api?.refreshList(["name"]),
 	};
-	return import.meta.env.DEV ? (
-		<SimulatedSelector {...props} />
-	) : (
-		<Selector {...props} />
-	);
+	return <Selector {...props} />;
 }
 
 type SelectorProps = {
@@ -65,50 +55,6 @@ type SelectorProps = {
 	projects: CollectionResult<{ name: string }>;
 	retry: () => void;
 };
-
-function SimulatedSelector(props: SelectorProps) {
-	const { preset, scope } = useProjectSelectorSimulation();
-	if (preset === "live") return <Selector {...props} />;
-	const names =
-		preset === "long-names"
-			? [
-					"a-very-long-project-name-for-testing-the-selector-layout",
-					"another-long-project-name-for-testing",
-				]
-			: ["default", "development", "production"];
-	const data =
-		preset === "loading" || preset === "error"
-			? undefined
-			: preset === "empty"
-				? []
-				: names.map((name) => ({ name }));
-	const error =
-		preset === "error" || preset === "populated-error"
-			? new IncusApiError("network", "Simulated error")
-			: null;
-	return (
-		<Selector
-			{...props}
-			scope={scope}
-			setScope={setSampleScope}
-			isAvailable={
-				scope.kind === "all" ||
-				preset !== "unavailable" ||
-				scope.name !== "missing-project"
-			}
-			projects={{
-				data,
-				missing: [],
-				available: data !== undefined,
-				complete: data !== undefined,
-				fresh: false,
-				fetching: preset === "loading",
-				error,
-			}}
-			retry={() => setPreset("populated")}
-		/>
-	);
-}
 
 function Selector({
 	className,

@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { useMemo, useSyncExternalStore } from "react";
+import { createCollectionWatch } from "#collection-debug";
 import {
 	useDataLayer,
 	useSessionState,
 } from "@/components/providers/data-provider";
+import { useCollectionWatch } from "@/hooks/incus/use-collection-watch";
 import { useProjectScope } from "@/hooks/incus/use-project-scope";
 import { IncusApiError } from "@/lib/incus/client";
 import type {
@@ -38,6 +40,9 @@ export interface InstanceQuery {
 }
 
 const noop = () => () => undefined;
+const useInstancesWatch = import.meta.env.DEV
+	? createCollectionWatch("instances")
+	: useCollectionWatch;
 
 function placeholder(
 	session: SessionState,
@@ -91,7 +96,7 @@ export function useInstances<const F extends readonly InstanceField[]>(
 		() => ({ ...placeholder(session), missing: [], complete: false }),
 		[session],
 	);
-	return useWatch(watch, fallback) as CollectionResult<Selected<F>>;
+	return useInstancesWatch(watch, fallback);
 }
 
 const NEEDS_PROJECT = new IncusApiError(
