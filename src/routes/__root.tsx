@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { EventsDevtoolsPanel } from "@/components/debug/events-devtools-panel";
+import { ProjectSelectorDevtoolsPanel } from "@/components/debug/project-selector-devtools-panel";
 
 import "../styles.css";
 
@@ -42,6 +43,10 @@ function RootDocument() {
 						{
 							name: "Incus Events",
 							render: <EventsDevtoolsPanel />,
+						},
+						{
+							name: "Project Selector",
+							render: <ProjectSelectorDevtoolsPanel />,
 						},
 					]}
 				/>
